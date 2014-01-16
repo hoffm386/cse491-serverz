@@ -1,3 +1,8 @@
 2014-01-07  Titus Brown  <t@Titus-MacBook-Air-2.local>
 
  * Initialized repository, created server.py and README.
+
+
+2014-01-15  Tim Hasselbeck  <not sure what this is ^_^ >
+
+ * Updated server.py to provide a more aesthetically pleasing web server!
