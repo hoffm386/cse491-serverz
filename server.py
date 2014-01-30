@@ -3,10 +3,12 @@ import random
 import socket
 import time
 
+# handles all HTTP GET requests
 def handle_get_request(conn, path):
-    conn.send("HTTP/1.0 200 OK\r\n")
+    content_type = ""
+    body = ""
     if (path == "/"):
-        conn.send("Content-type: text/html\r\n\r\n")
+        content_type = "text/html"
         body = """
         <h1>Hello, world.</h1>This is hoffm386's Web server.
         <ul>
@@ -14,35 +16,36 @@ def handle_get_request(conn, path):
           <li><a href='/file'>File</a></li>
           <li><a href='/image'>Image</a></li>
         </ul>
-        """
-        conn.send(body)
+        """   
     elif (path == "/content"):
-        conn.send("Content-type: text/html\r\n\r\n")
+        content_type = "text/html"
         body = """
         <h1>Content</h1>
         This page will contain "content"
         """
-        conn.send(body)
     elif (path == "/file"):
         # once there is actual content here, there might be a type of
         # application/pdf instead of text/html
-        conn.send("Content-type: text/html\r\n\r\n")
+        content_type = "text/html"
         body = """
         <h1>File</h1>
         This page will contain "file"
         """
-        conn.send(body)
     elif (path == "/image"):
         # once there is actual content here, there might be a type of
         # image/jpeg or image/png
-        conn.send("Content-type: text/html\r\n\r\n")
+        content_type = "text/html"
         body = """
         <h1>Image</h1>
         This page will contain an "image"
         """
-        conn.send(body)
 
-def handle_post_request(conn):
+    conn.send("HTTP/1.0 200 OK\r\n")
+    conn.send("Content-type: "+content_type+"\r\n\r\n")
+    conn.send(body)
+
+# handles all HTTP POST requests
+def handle_post_request(conn, path):
     conn.send("HTTP/1.0 200 OK\r\n")
     conn.send("Content-type: text/html\r\n\r\n")
     body = """
@@ -52,14 +55,15 @@ def handle_post_request(conn):
     """
     conn.send(body)
 
+# determines if connection is GET or POST and parses out path
 def handle_connection(conn):
     request = conn.recv(1000)
     request_type = request.split(" ")[0]
+    path = request.split(" ")[1]
     if (request_type == "GET"):
-        path = request.split(" ")[1]
         handle_get_request(conn, path)
     elif (request_type == "POST"):
-        handle_post_request(conn)
+        handle_post_request(conn, path)
     conn.close()
 
 def main():
