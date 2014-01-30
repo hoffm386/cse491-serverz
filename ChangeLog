@@ -9,3 +9,7 @@
 2014-01-22 Erin Hoffman
  
  * Modified server.py and test_server.py for Homework 2
+
+2014-02-29 Erin Hoffman
+
+ * Refactored server.py to look a little bit neater
