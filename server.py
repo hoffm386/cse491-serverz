@@ -2,68 +2,156 @@
 import random
 import socket
 import time
+import urlparse
 
-# handles all HTTP GET requests
-def handle_get_request(conn, path):
-    content_type = ""
-    body = ""
-    if (path == "/"):
-        content_type = "text/html"
-        body = """
-        <h1>Hello, world.</h1>This is hoffm386's Web server.
-        <ul>
-          <li><a href='/content'>Content</a></li>
-          <li><a href='/file'>File</a></li>
-          <li><a href='/image'>Image</a></li>
-        </ul>
-        """   
-    elif (path == "/content"):
-        content_type = "text/html"
-        body = """
-        <h1>Content</h1>
-        This page will contain "content"
-        """
-    elif (path == "/file"):
-        # once there is actual content here, there might be a type of
-        # application/pdf instead of text/html
-        content_type = "text/html"
-        body = """
-        <h1>File</h1>
-        This page will contain "file"
-        """
-    elif (path == "/image"):
-        # once there is actual content here, there might be a type of
-        # image/jpeg or image/png
-        content_type = "text/html"
-        body = """
-        <h1>Image</h1>
-        This page will contain an "image"
-        """
-
+def handle_index_get(conn, args):
+    content_type = "text/html"
+    body = """
+    <h1>Hello, world.</h1>This is hoffm386's Web server.
+    <ul>
+        <li><a href='/content'>Content</a></li>
+        <li><a href='/file'>File</a></li>
+        <li><a href='/image'>Image</a></li>
+        <li><a href='/form'>Form</a></li>
+    </ul>
+    """   
     conn.send("HTTP/1.0 200 OK\r\n")
     conn.send("Content-type: "+content_type+"\r\n\r\n")
     conn.send(body)
 
-# handles all HTTP POST requests
-def handle_post_request(conn, path):
-    conn.send("HTTP/1.0 200 OK\r\n")
-    conn.send("Content-type: text/html\r\n\r\n")
+def handle_content_get(conn, args):
+    content_type = "text/html"
     body = """
-    <h1>Post Request</h1>
-    This is not actually what a post request will do, but I have received
+    <h1>Content</h1>
+    This page will contain "content"
+    """
+    conn.send("HTTP/1.0 200 OK\r\n")
+    conn.send("Content-type: "+content_type+"\r\n\r\n")
+    conn.send(body)
+
+def handle_file_get(conn, args):
+    # once there is actual content here, there might be a type of
+    # application/pdf instead of text/html
+    content_type = "text/html"
+    body = """
+    <h1>File</h1>
+    This page will contain "file"
+    """
+    conn.send("HTTP/1.0 200 OK\r\n")
+    conn.send("Content-type: "+content_type+"\r\n\r\n")
+    conn.send(body)
+
+def handle_image_get(conn, args):
+    # once there is actual content here, there might be a type of
+    # image/jpeg or image/png
+    content_type = "text/html"
+    body = """
+    <h1>Image</h1>
+    This page will contain an "image"
+    """
+    conn.send("HTTP/1.0 200 OK\r\n")
+    conn.send("Content-type: "+content_type+"\r\n\r\n")
+    conn.send(body)
+
+def handle_form_get(conn, args):
+    content_type = "text/html"
+    body = """
+    <div>
+        <h1>GET form</h1>
+        <form action='/submit' method='GET'>
+            <input type='text' name='firstname'>
+            <input type='text' name='lastname'>
+            <input type='submit' value='Submit'>
+        </form>
+    </div>
+    <div>
+        <h1>POST form</h1>
+        <form action='/submit' method='POST'>
+            <input type='text' name='firstname'>
+            <input type='text' name='lastname'>
+            <input type='submit' value='Submit'>
+        </form>
+    </div>
+    """
+    conn.send("HTTP/1.0 200 OK\r\n")
+    conn.send("Content-type: "+content_type+"\r\n\r\n")
+    conn.send(body)
+
+def handle_submit(conn, args):
+    content_type = "text/html"
+    if (args):
+        first_name = args['firstname'][0]
+        last_name = args['lastname'][0]
+        body = """
+        <h1>Form Submission</h1>
+        Hello Mr. %s %s.
+        """ % (first_name, last_name)
+    else:
+        body = """
+        <h1>Form Submission</h1>
+        Hello, you didn't submit any data.
+        """
+    conn.send("HTTP/1.0 200 OK\r\n")
+    conn.send("Content-type: "+content_type+"\r\n\r\n")
+    conn.send(body)
+
+def handle_post(conn, args):
+    content_type = "text/html"
+    body = """
+    <h1>Post Request without args</h1>
+    This is not actually what a post request should do, but I have received
     a post request
     """
+    conn.send("HTTP/1.0 200 OK\r\n")
+    conn.send("Content-type: "+content_type+"\r\n\r\n")
     conn.send(body)
+
+# handles all HTTP GET requests
+def handle_get_request(conn, path, args):
+    if (path == "/"):
+        handle_index_get(conn, args)
+    elif (path == "/content"):
+        handle_content_get(conn, args)
+    elif (path == "/file"):
+        handle_file_get(conn, args)
+    elif (path == "/image"):
+        handle_image_get(conn, args)
+    elif (path == "/form"):
+        handle_form_get(conn, args) 
+    elif (path == "/submit"):
+        handle_submit(conn, args)
+
+# handles all HTTP POST requests
+def handle_post_request(conn, path, args):
+    if (path == "/"):
+        handle_post(conn, args)
+    elif (path == "/submit"):
+        handle_submit(conn, args) 
 
 # determines if connection is GET or POST and parses out path
 def handle_connection(conn):
     request = conn.recv(1000)
     request_type = request.split(" ")[0]
-    path = request.split(" ")[1]
     if (request_type == "GET"):
-        handle_get_request(conn, path)
+        # GET args come after the ? in the path
+        path_and_args = request.split(" ")[1].split("?")
+        path = path_and_args[0]
+        # if args exist, send them, otherwise send empty dictionary
+        if (len(path_and_args)>1):
+            args = urlparse.parse_qs(path_and_args[1])
+        else:
+            args = {}
+        handle_get_request(conn, path, args)
     elif (request_type == "POST"):
-        handle_post_request(conn, path)
+        # POST args come after the CRLF (in the message body)
+        path = request.split(" ")[1]
+        header_and_content = request.split("\r\n\r\n")
+        # if args exist, send them, otherwise send emtpy dictionary
+        if (len(header_and_content)>1):
+            args = urlparse.parse_qs(header_and_content[-1])
+        else:
+            args = {}
+        handle_post_request(conn, path, args)
     conn.close()
 
 def main():
