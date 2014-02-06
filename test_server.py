@@ -132,9 +132,9 @@ def test_submit_get():
              'Content-type: text/html\r\n' + \
              '\r\n'
     body = """
-    <h1>Form Submission</h1>
-    Hello Mr. John Smith.
-    """
+        <h1>Form Submission</h1>
+        Hello Mr. John Smith.
+        """
     expected_return = header + body
     server.handle_connection(conn)
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
@@ -153,11 +153,30 @@ def test_submit_post():
              'Content-type: text/html\r\n' + \
              '\r\n'
     body = """
-    <h1>Form Submission</h1>
-    Hello Mr. John Smith.
-    """
+        <h1>Form Submission</h1>
+        Hello Mr. John Smith.
+        """
     expected_return = header + body
     server.handle_connection(conn)
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
+def test_submit_post_no_args():
+    conn_string = "POST /submit HTTP/1.1\r\n" + \
+                  "Host: arctic.cse.msu.edu:8987\r\n" + \
+                  "Accept: text/html,application/xhtml+xml,application/xml;" +\
+                  "q=0.9,*/*;q=0.8\r\n" + \
+                  "Referer: http://arctic.cse.msu.edu:8987/form\r\n" + \
+                  "Content-Type: application/x-www-form-urlencoded\r\n" + \
+                  "Content-Length: 29\r\n\r\n"
+    conn = FakeConnection(conn_string)
+    header = 'HTTP/1.0 200 OK\r\n' + \
+             'Content-type: text/html\r\n' + \
+             '\r\n'
+    body = """
+        <h1>Form Submission</h1>
+        Hello, you didn't submit any data.
+        """
+    expected_return = header + body
+    server.handle_connection(conn)
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 

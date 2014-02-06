@@ -78,13 +78,19 @@ def handle_form_get(conn, args):
     conn.send(body)
 
 def handle_submit(conn, args):
-    first_name = args['firstname'][0]
-    last_name = args['lastname'][0]
     content_type = "text/html"
-    body = """
-    <h1>Form Submission</h1>
-    Hello Mr. %s %s.
-    """ % (first_name, last_name)
+    if (args):
+        first_name = args['firstname'][0]
+        last_name = args['lastname'][0]
+        body = """
+        <h1>Form Submission</h1>
+        Hello Mr. %s %s.
+        """ % (first_name, last_name)
+    else:
+        body = """
+        <h1>Form Submission</h1>
+        Hello, you didn't submit any data.
+        """
     conn.send("HTTP/1.0 200 OK\r\n")
     conn.send("Content-type: "+content_type+"\r\n\r\n")
     conn.send(body)
