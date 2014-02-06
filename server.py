@@ -2,156 +2,134 @@
 import random
 import socket
 import time
-import urlparse
+from urlparse import urlparse, parse_qs
+from cgi import FieldStorage
+from StringIO import StringIO
+from jinja2 import FileSystemLoader, Environment
 
-def handle_index_get(conn, args):
+def handle_index_get(conn, environment, args):
     content_type = "text/html"
-    body = """
-    <h1>Hello, world.</h1>This is hoffm386's Web server.
-    <ul>
-        <li><a href='/content'>Content</a></li>
-        <li><a href='/file'>File</a></li>
-        <li><a href='/image'>Image</a></li>
-        <li><a href='/form'>Form</a></li>
-    </ul>
-    """   
-    conn.send("HTTP/1.0 200 OK\r\n")
-    conn.send("Content-type: "+content_type+"\r\n\r\n")
-    conn.send(body)
+    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
+    template = environment.get_template("index.html")
+    conn.send(template.render(args))
 
-def handle_content_get(conn, args):
+def handle_content_get(conn, environment, args):
     content_type = "text/html"
-    body = """
-    <h1>Content</h1>
-    This page will contain "content"
-    """
-    conn.send("HTTP/1.0 200 OK\r\n")
-    conn.send("Content-type: "+content_type+"\r\n\r\n")
-    conn.send(body)
+    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
+    template = environment.get_template("content.html")
+    conn.send(template.render(args))
 
-def handle_file_get(conn, args):
+def handle_file_get(conn, environment, args):
     # once there is actual content here, there might be a type of
     # application/pdf instead of text/html
     content_type = "text/html"
-    body = """
-    <h1>File</h1>
-    This page will contain "file"
-    """
-    conn.send("HTTP/1.0 200 OK\r\n")
-    conn.send("Content-type: "+content_type+"\r\n\r\n")
-    conn.send(body)
+    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
+    template = environment.get_template("file.html")
+    conn.send(template.render(args))
 
-def handle_image_get(conn, args):
+def handle_image_get(conn, environment, args):
     # once there is actual content here, there might be a type of
     # image/jpeg or image/png
     content_type = "text/html"
-    body = """
-    <h1>Image</h1>
-    This page will contain an "image"
-    """
-    conn.send("HTTP/1.0 200 OK\r\n")
-    conn.send("Content-type: "+content_type+"\r\n\r\n")
-    conn.send(body)
+    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
+    template = environment.get_template("image.html")
+    conn.send(template.render(args))
 
-def handle_form_get(conn, args):
+def handle_form_get(conn, environment, args):
     content_type = "text/html"
-    body = """
-    <div>
-        <h1>GET form</h1>
-        <form action='/submit' method='GET'>
-            <input type='text' name='firstname'>
-            <input type='text' name='lastname'>
-            <input type='submit' value='Submit'>
-        </form>
-    </div>
-    <div>
-        <h1>POST form</h1>
-        <form action='/submit' method='POST'>
-            <input type='text' name='firstname'>
-            <input type='text' name='lastname'>
-            <input type='submit' value='Submit'>
-        </form>
-    </div>
-    """
-    conn.send("HTTP/1.0 200 OK\r\n")
-    conn.send("Content-type: "+content_type+"\r\n\r\n")
-    conn.send(body)
+    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
+    template = environment.get_template("form.html")
+    conn.send(template.render(args))
 
-def handle_submit(conn, args):
+def handle_submit(conn, environment, args):
     content_type = "text/html"
-    if (args):
-        first_name = args['firstname'][0]
-        last_name = args['lastname'][0]
-        body = """
-        <h1>Form Submission</h1>
-        Hello Mr. %s %s.
-        """ % (first_name, last_name)
-    else:
-        body = """
-        <h1>Form Submission</h1>
-        Hello, you didn't submit any data.
-        """
-    conn.send("HTTP/1.0 200 OK\r\n")
-    conn.send("Content-type: "+content_type+"\r\n\r\n")
-    conn.send(body)
+    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
+    template = environment.get_template("submit.html")
+    conn.send(template.render(args))
 
-def handle_post(conn, args):
-    content_type = "text/html"
-    body = """
-    <h1>Post Request without args</h1>
-    This is not actually what a post request should do, but I have received
-    a post request
-    """
-    conn.send("HTTP/1.0 200 OK\r\n")
-    conn.send("Content-type: "+content_type+"\r\n\r\n")
-    conn.send(body)
+def handle_404(conn, environment, args):
+    conn.send("HTTP/1.0 404 Not Found\r\n\r\n")
+    template = environment.get_template("404.html")
+    conn.send(template.render(args))
 
-# handles all HTTP GET requests
-def handle_get_request(conn, path, args):
-    if (path == "/"):
-        handle_index_get(conn, args)
-    elif (path == "/content"):
-        handle_content_get(conn, args)
-    elif (path == "/file"):
-        handle_file_get(conn, args)
-    elif (path == "/image"):
-        handle_image_get(conn, args)
-    elif (path == "/form"):
-        handle_form_get(conn, args) 
-    elif (path == "/submit"):
-        handle_submit(conn, args)
-
-# handles all HTTP POST requests
-def handle_post_request(conn, path, args):
-    if (path == "/"):
-        handle_post(conn, args)
-    elif (path == "/submit"):
-        handle_submit(conn, args) 
-
-# determines if connection is GET or POST and parses out path
 def handle_connection(conn):
-    request = conn.recv(1000)
-    request_type = request.split(" ")[0]
-    if (request_type == "GET"):
-        # GET args come after the ? in the path
-        path_and_args = request.split(" ")[1].split("?")
-        path = path_and_args[0]
-        # if args exist, send them, otherwise send empty dictionary
-        if (len(path_and_args)>1):
-            args = urlparse.parse_qs(path_and_args[1])
-        else:
-            args = {}
-        handle_get_request(conn, path, args)
-    elif (request_type == "POST"):
-        # POST args come after the CRLF (in the message body)
-        path = request.split(" ")[1]
-        header_and_content = request.split("\r\n\r\n")
-        # if args exist, send them, otherwise send emtpy dictionary
-        if (len(header_and_content)>1):
-            args = urlparse.parse_qs(header_and_content[-1])
-        else:
-            args = {}
-        handle_post_request(conn, path, args)
+
+    #
+    # Get header stuff from conn, parse header stuff so we know how much content
+    # stuff to get from conn, get content stuff from conn
+    #
+
+    # loop until we get all of the header stuff
+    full_request = conn.recv(1)
+    while full_request[-4:] != "\r\n\r\n":
+        full_request += conn.recv(1)
+
+    # split header into first line and everything else
+    first_line, request_args = full_request.split("\r\n",1)
+
+    # make dictionary of header stuff
+    headers = {}
+    for line in request_args.split("\r\n")[:-2]:
+        # every time there's a ": ", there's a header key/value pair
+        key, value = line.split(": ",1)
+        key = key.lower()
+        headers[key] = value
+    
+    # POST args come after the CRLF (in the message body), so we can't just get
+    # the header, we need to grab "content-length" bits overall
+    content = ""
+    if (first_line.startswith("POST")):
+        content_length = int(headers["content-length"])
+        while len(content) < content_length:
+            content += conn.recv(1)
+   
+    #
+    # Now that we have everything we need from conn, start building the response
+    # args object
+    #
+
+    # make content into a mysterious "StringIO" object
+    content = StringIO(content)
+
+    # extract path from first line and use parse_qs to get basic args
+    path = urlparse(first_line.split(" ",3)[1])
+    args = parse_qs(path[4])
+
+    # use the mysterious "cgi.FieldStorage" module to fill args variable
+    # mapping we will use to go from path to  html
+    field_storage = FieldStorage(fp=content, headers=headers, \
+                                 environ={"REQUEST_METHOD":"POST"})
+    for key in field_storage.keys():
+        # the value goes into a list because that's what parse_qs does, and it
+        # would be silly to have different html pages for GET vs POST form
+        # submission
+        args.update({key:[field_storage[key].value]})
+
+    #
+    # Now that we have our shiny args object, use "jinja2" and map the request
+    # path to the right HTML template (or 404 if invalid)
+    #
+
+    loader = FileSystemLoader("./templates")
+    environment = Environment(loader=loader)
+
+    page = path[2]
+    if page == "/":
+        handle_index_get(conn, environment, args)
+    elif page == "/content":
+        handle_content_get(conn, environment, args)
+    elif page == "/file":
+        handle_file_get(conn, environment, args)
+    elif page == "/image":
+        handle_image_get(conn, environment, args)
+    elif page == "/form":
+        handle_form_get(conn, environment, args)
+    elif page == "/submit":
+        handle_submit(conn, environment, args)
+    else:
+        args["path"] = page
+        handle_404(conn, environment, args)
+
     conn.close()
 
 def main():
