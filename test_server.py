@@ -81,7 +81,7 @@ def test_handle_file_get():
 def test_handle_image_get():
     conn = FakeConnection("GET /image HTTP/1.0\r\n\r\n")
     header = 'HTTP/1.0 200 OK\r\n' + \
-             'Content-type: text/html\r\n' + \
+             'Content-type: image/jpeg\r\n' + \
              '\r\n'
     body = """<html>
     <body>
@@ -91,7 +91,7 @@ def test_handle_image_get():
 </html>"""
     expected_return = header + body
     server.handle_connection(conn)
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+    assert conn.sent == expected_return, 'Got: a long string' #% (repr(conn.sent),)
 
 def test_handle_form_get():
     conn = FakeConnection("GET /form HTTP/1.0\r\n\r\n")
@@ -134,7 +134,8 @@ def test_404_get():
 </html>"""
     expected_return = header + body
     server.handle_connection(conn)
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+    assert conn.sent == expected_return, 'Expected: %s\nGot: %s' % \
+                         (repr(expected_return),repr(conn.sent),)
 
 def test_post_urlencoded():
     first = "Erin"

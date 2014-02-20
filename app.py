@@ -39,7 +39,7 @@ def simple_app(environ, start_response):
             # the value goes into a list because that's what parse_qs does, and
             # it would be silly to have different html pages for GET vs POST form
             # submission
-            args.update({key:[field_storage[key].value]})
+            args.update({key:field_storage[key].value})
 
     #
     # Now that we have our shiny args object, use "jinja2" and map the request
@@ -47,76 +47,90 @@ def simple_app(environ, start_response):
     #
 
     loader = FileSystemLoader("./templates")
-    environment = Environment(loader=loader)
-    response_headers = [('Content-type', 'text/html')]
+    j_environ = Environment(loader=loader)
+    
     
 
     page = environ["PATH_INFO"]
     if page == "/":
-        status, template = handle_index_get(environment)
+        status, content, response_headers = handle_index_get(j_environ, args)
     elif page == "/content":
-        status, template = handle_content_get(environment)
+        status, content, response_headers = handle_content_get(j_environ, args)
     elif page == "/file":
-        status, template = handle_file_get(environment)
+        status, content, response_headers = handle_file_get(j_environ, args)
     elif page == "/image":
-        status, template = handle_image_get(environment)
+        status, content, response_headers = handle_image_get(j_environ, args)
     elif page == "/form":
-        status, template = handle_form_get(environment)
+        status, content, response_headers = handle_form_get(j_environ, args)
     elif page == "/submit":
-        status, template = handle_submit(environment)
+        status, content, response_headers = handle_submit(j_environ, args)
     else:
         args["path"] = page
-        status, template = handle_404(environment)
+        status, content, response_headers = handle_404(j_environ, args)
 
     start_response(status, response_headers)
 
-    return template.render(args)
+    return content
 
-##    ret = ["%s: %s\n" % (key, value)
-##           for key, value in environ.iteritems()]
-##    ret.insert(0, "This is your environ.  Hello, world!\n\n")
-##
-##    return ret
 
 def make_app():
     return simple_app
 
-def handle_index_get(environment):
+def handle_index_get(environment, args):
     status = "200 OK"
     template = environment.get_template("index.html")
-    return status, template
+    response_headers = []
+    response_headers.append(('Content-type', 'text/html'))
+    return status, template.render(args), response_headers
 
-def handle_content_get(environment):
+def handle_content_get(environment, args):
     status = "200 OK"
     template = environment.get_template("content.html")
-    return status, template
+    response_headers = []
+    response_headers.append(('Content-type', 'text/html'))
+    return status, template.render(args), response_headers
 
-def handle_file_get(environment):
+def handle_file_get(environment, args):
     status = "200 OK"
     # once there is actual content here, there might be a type of
     # application/pdf instead of text/html
-    template = environment.get_template("file.html")
-    return status, template
+    text_file = open_file("files/city_all.txt")
+    response_headers = []
+    response_headers.append(('Content-type', 'text/html'))
+    return status, text_file, response_headers
 
-def handle_image_get(environment):
+def handle_image_get(environment, args):
     status = "200 OK"
     # once there is actual content here, there might be a type of
     # image/jpeg or image/png
-    template = environment.get_template("image.html")
-    return status, template
+    image = open_file("img/galaxy.jpg")
+    response_headers = []
+    response_headers.append(('Content-type', 'image/jpeg'))
+    return status, image, response_headers
 
-def handle_form_get(environment):
+def handle_form_get(environment, args):
     status = "200 OK"
     template = environment.get_template("form.html")
-    return status, template
+    response_headers = []
+    response_headers.append(('Content-type', 'text/html'))
+    return status, template.render(args), response_headers
 
-def handle_submit(environment):
+def handle_submit(environment, args):
     status = "200 OK"
     template = environment.get_template("submit.html")
-    return status, template
+    response_headers = []
+    response_headers.append(('Content-type', 'text/html'))
+    return status, template.render(args), response_headers
 
-def handle_404(environment):
+def handle_404(environment, args):
     status = "404 Not Found"
     template = environment.get_template("404.html")
-    return status, template
+    response_headers = []
+    return status, template.render(args), response_headers
+
+def open_file(filename):
+    fp = open(filename, "rb")
+    data = fp.read()
+    fp.close()
+    return data
 
