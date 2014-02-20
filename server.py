@@ -6,53 +6,11 @@ from urlparse import urlparse, parse_qs
 from cgi import FieldStorage
 from StringIO import StringIO
 from jinja2 import FileSystemLoader, Environment
-
-def handle_index_get(conn, environment, args):
-    content_type = "text/html"
-    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
-    template = environment.get_template("index.html")
-    conn.send(template.render(args))
-
-def handle_content_get(conn, environment, args):
-    content_type = "text/html"
-    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
-    template = environment.get_template("content.html")
-    conn.send(template.render(args))
-
-def handle_file_get(conn, environment, args):
-    # once there is actual content here, there might be a type of
-    # application/pdf instead of text/html
-    content_type = "text/html"
-    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
-    template = environment.get_template("file.html")
-    conn.send(template.render(args))
-
-def handle_image_get(conn, environment, args):
-    # once there is actual content here, there might be a type of
-    # image/jpeg or image/png
-    content_type = "text/html"
-    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
-    template = environment.get_template("image.html")
-    conn.send(template.render(args))
-
-def handle_form_get(conn, environment, args):
-    content_type = "text/html"
-    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
-    template = environment.get_template("form.html")
-    conn.send(template.render(args))
-
-def handle_submit(conn, environment, args):
-    content_type = "text/html"
-    conn.send("HTTP/1.0 200 OK\r\nContent-type: "+content_type+"\r\n\r\n")
-    template = environment.get_template("submit.html")
-    conn.send(template.render(args))
-
-def handle_404(conn, environment, args):
-    conn.send("HTTP/1.0 404 Not Found\r\n\r\n")
-    template = environment.get_template("404.html")
-    conn.send(template.render(args))
+from app import make_app
 
 def handle_connection(conn):
+
+    
 
     #
     # Get header stuff from conn, parse header stuff so we know how much content
@@ -74,7 +32,15 @@ def handle_connection(conn):
         key, value = line.split(": ",1)
         key = key.lower()
         headers[key] = value
-    
+
+    # extract path from first line and use parse_qs to get basic args
+    path = urlparse(first_line.split(" ",3)[1])
+
+    # set up "environ" thing for wsgi
+    environ = {}
+    environ["PATH_INFO"] = path[2]
+    environ["QUERY_STRING"] = path[4]
+     
     # POST args come after the CRLF (in the message body), so we can't just get
     # the header, we need to grab "content-length" bits overall
     content = ""
@@ -82,53 +48,32 @@ def handle_connection(conn):
         content_length = int(headers["content-length"])
         while len(content) < content_length:
             content += conn.recv(1)
+        environ["REQUEST_METHOD"] = "POST"
+        environ["CONTENT_LENGTH"] = content_length
+        environ["CONTENT_TYPE"] = headers["content-type"]
+    else:
+        environ["REQUEST_METHOD"] = "GET"
+        environ["CONTENT_LENGTH"] = 0
+        environ["CONTENT_TYPE"] = "text/html"
    
-    #
-    # Now that we have everything we need from conn, start building the response
-    # args object
-    #
+    # this function is nested inside handle_connection because I don't know
+    # how else to get access to conn without making it a global variable
+    def start_response(status, response_headers):
+        conn.send('HTTP/1.0 ')
+        conn.send(status)
+        conn.send('\r\n')
+        for pair in response_headers:
+            key, header = pair
+            conn.send(key + ': ' + header + '\r\n')
+        conn.send('\r\n')
 
     # make content into a mysterious "StringIO" object
     content = StringIO(content)
-
-    # extract path from first line and use parse_qs to get basic args
-    path = urlparse(first_line.split(" ",3)[1])
-    args = parse_qs(path[4])
-
-    # use the mysterious "cgi.FieldStorage" module to fill args variable
-    # mapping we will use to go from path to  html
-    field_storage = FieldStorage(fp=content, headers=headers, \
-                                 environ={"REQUEST_METHOD":"POST"})
-    for key in field_storage.keys():
-        # the value goes into a list because that's what parse_qs does, and it
-        # would be silly to have different html pages for GET vs POST form
-        # submission
-        args.update({key:[field_storage[key].value]})
-
-    #
-    # Now that we have our shiny args object, use "jinja2" and map the request
-    # path to the right HTML template (or 404 if invalid)
-    #
-
-    loader = FileSystemLoader("./templates")
-    environment = Environment(loader=loader)
-
-    page = path[2]
-    if page == "/":
-        handle_index_get(conn, environment, args)
-    elif page == "/content":
-        handle_content_get(conn, environment, args)
-    elif page == "/file":
-        handle_file_get(conn, environment, args)
-    elif page == "/image":
-        handle_image_get(conn, environment, args)
-    elif page == "/form":
-        handle_form_get(conn, environment, args)
-    elif page == "/submit":
-        handle_submit(conn, environment, args)
-    else:
-        args["path"] = page
-        handle_404(conn, environment, args)
+    environ["wsgi.input"] = content
+    the_app = make_app()
+    ret = the_app(environ, start_response)
+    for stuff in ret:
+        conn.send(stuff)
 
     conn.close()
 
