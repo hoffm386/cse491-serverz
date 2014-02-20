@@ -17,8 +17,17 @@ def simple_app(environ, start_response):
 
     # Grab POST args if there are any
     if environ['REQUEST_METHOD'] == 'POST':
-        headers = {k[5:].lower().replace('_','-') : v \
-                    for k,v in environ.iteritems() if(k.startswith('HTTP'))}
+        headers = dict()
+
+        for key, value in environ.iteritems():
+            if key.startswith("HTTP"):
+                header_key_string = key[5:]
+                # environ keys look like "CONTENT_TYPE", while header keys look
+                # like "content-type", hence this reformatting
+                header_key_string = header_key_string.lower()
+                header_key_string = header_key_string.replace("_","-")
+                headers[header_key_string] = value
+
         headers['content-type'] = environ['CONTENT_TYPE']
         headers['content-length'] = environ['CONTENT_LENGTH']
         
@@ -27,8 +36,8 @@ def simple_app(environ, start_response):
         field_storage = FieldStorage(fp=environ['wsgi.input'], \
                                      headers=headers, environ=environ)
         for key in field_storage.keys():
-            # the value goes into a list because that's what parse_qs does, and it
-            # would be silly to have different html pages for GET vs POST form
+            # the value goes into a list because that's what parse_qs does, and
+            # it would be silly to have different html pages for GET vs POST form
             # submission
             args.update({key:[field_storage[key].value]})
 
