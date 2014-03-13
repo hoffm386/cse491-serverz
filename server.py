@@ -72,8 +72,9 @@ def handle_connection(conn):
     environ["wsgi.input"] = content
     the_app = make_app()
     ret = the_app(environ, start_response)
-    for stuff in ret:
-        conn.send(stuff)
+    if (ret):
+        for stuff in ret:
+            conn.send(stuff)
 
     conn.close()
 
