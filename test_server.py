@@ -45,7 +45,7 @@ def test_handle_index_get():
 </html>
 """
     expected_return = header + body
-    server.handle_connection(conn)
+    server.handle_connection(conn, 8500)
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_handle_content_get():
@@ -60,7 +60,7 @@ def test_handle_content_get():
     </body>
 </html>"""
     expected_return = header + body
-    server.handle_connection(conn)
+    server.handle_connection(conn, 8500)
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_handle_file_get():
@@ -68,30 +68,19 @@ def test_handle_file_get():
     header = 'HTTP/1.0 200 OK\r\n' + \
              'Content-type: text/html\r\n' + \
              '\r\n'
-    body = """<html>
-    <body>
-        <h1>File</h1>
-        This page will contain "file"
-    </body>
-</html>"""
-    expected_return = header + body
-    server.handle_connection(conn)
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+    expected_return = header
+    server.handle_connection(conn, 8500)
+    assert conn.sent.startswith(expected_return), 'Got: %s' % (repr(conn.sent),)
 
 def test_handle_image_get():
     conn = FakeConnection("GET /image HTTP/1.0\r\n\r\n")
     header = 'HTTP/1.0 200 OK\r\n' + \
              'Content-type: image/jpeg\r\n' + \
              '\r\n'
-    body = """<html>
-    <body>
-        <h1>Image</h1>
-        This page will contain an "image"
-    </body>
-</html>"""
-    expected_return = header + body
-    server.handle_connection(conn)
-    assert conn.sent == expected_return, 'Got: a long string' #% (repr(conn.sent),)
+    expected_return = header
+    server.handle_connection(conn, 8500)
+    assert conn.sent.startswith(expected_return), 'Got: a long string' 
+    #% (repr(conn.sent),)
 
 def test_handle_form_get():
     conn = FakeConnection("GET /form HTTP/1.0\r\n\r\n")
@@ -119,12 +108,14 @@ def test_handle_form_get():
     </body>
 </html>"""
     expected_return = header + body
-    server.handle_connection(conn)
+    server.handle_connection(conn, 8500)
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_404_get():
     conn = FakeConnection("GET /asdf HTTP/1.0\r\n\r\n")
-    header = 'HTTP/1.0 404 Not Found\r\n\r\n'
+    header = 'HTTP/1.0 404 Not Found\r\n' + \
+             'Content-type: text/html\r\n' + \
+             '\r\n'
     body = """<html>
     <body>
         <h1>404</h1>
@@ -133,7 +124,7 @@ def test_404_get():
     </body>
 </html>"""
     expected_return = header + body
-    server.handle_connection(conn)
+    server.handle_connection(conn, 8500)
     assert conn.sent == expected_return, 'Expected: %s\nGot: %s' % \
                          (repr(expected_return),repr(conn.sent),)
 
@@ -155,23 +146,7 @@ def test_post_urlencoded():
     </body>
 </html>"""
     expected_return = header + body
-    server.handle_connection(conn)
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
-
-def test_submit_get():
-    get_args = "?firstname=John&lastname=Smith"
-    conn = FakeConnection("GET /submit%s HTTP/1.1\r\n\r\n" % (get_args))
-    header = 'HTTP/1.0 200 OK\r\n' + \
-             'Content-type: text/html\r\n' + \
-             '\r\n'
-    body = """<html>
-    <body>
-        <h1>Form Submission</h1>
-        Hello Mr. John Smith.
-    </body>
-</html>"""
-    expected_return = header + body
-    server.handle_connection(conn)
+    server.handle_connection(conn, 8500)
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_submit_post():
@@ -194,7 +169,7 @@ def test_submit_post():
     </body>
 </html>"""
     expected_return = header + body
-    server.handle_connection(conn)
+    server.handle_connection(conn, 8500)
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 
