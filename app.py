@@ -1,12 +1,9 @@
 #!/usr/bin/env python
-import random
-import socket
-import time
+from random import choice
 from urlparse import urlparse, parse_qs
 from cgi import FieldStorage
 from StringIO import StringIO
 from jinja2 import FileSystemLoader, Environment
-from wsgiref.util import setup_testing_defaults
 
 """
 A relatively simple WSGI application.
@@ -56,6 +53,8 @@ def simple_app(environ, start_response):
         for key in field_storage.keys():
             args.update({key:field_storage[key].value})
 
+    
+
     # Create a jinja2 environment pointing at the templates folder
     loader = FileSystemLoader("./templates")
     j_environ = Environment(loader=loader)
@@ -76,7 +75,6 @@ def simple_app(environ, start_response):
     elif page == "/submit":
         status, content, response_headers = handle_submit(j_environ, args)
     else:
-        args["path"] = page
         status, content, response_headers = handle_404(j_environ, args)
 
     # Call start_reponse function (which was passed in as a parameter) with
@@ -93,14 +91,6 @@ main app function
 def make_app():
     return simple_app
 
-"""
-Index handler
-@param environment The jinja2 environment
-@param args The args dictionary jinja2 needs to render the template
-@returns "200 OK" (the request was successful)
-         HTML of index page
-         Headers indicating type text/html
-"""
 def handle_index_get(environment, args):
     status = "200 OK"
     template = environment.get_template("index.html")
@@ -151,11 +141,12 @@ def handle_404(environment, args):
     status = "404 Not Found"
     template = environment.get_template("404.html")
     response_headers = []
+    response_headers.append(('Content-type', 'text/html'))
     return status, template.render(args), response_headers
 
 def open_file(filename):
     fp = open(filename, "rb")
-    data = fp.read()
+    data = [fp.read()]
     fp.close()
     return data
 

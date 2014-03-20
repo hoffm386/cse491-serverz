@@ -3,14 +3,12 @@ import random
 import socket
 import time
 from urlparse import urlparse, parse_qs
-from cgi import FieldStorage
 from StringIO import StringIO
-from jinja2 import FileSystemLoader, Environment
 from app import make_app
+from wsgiref.validate import validator
+from sys import stderr
 
-def handle_connection(conn):
-
-    
+def handle_connection(conn, port):
 
     #
     # Get header stuff from conn, parse header stuff so we know how much content
@@ -40,7 +38,9 @@ def handle_connection(conn):
     environ = {}
     environ["PATH_INFO"] = path[2]
     environ["QUERY_STRING"] = path[4]
-     
+    environ["SCRIPT_NAME"] = ""
+    environ["SERVER_NAME"] = socket.getfqdn()
+    environ["SERVER_PORT"] = str(port)
     # POST args come after the CRLF (in the message body), so we can't just get
     # the header, we need to grab "content-length" bits overall
     content = ""
@@ -49,11 +49,12 @@ def handle_connection(conn):
         while len(content) < content_length:
             content += conn.recv(1)
         environ["REQUEST_METHOD"] = "POST"
-        environ["CONTENT_LENGTH"] = content_length
+        environ["CONTENT_LENGTH"] = str(content_length)
         environ["CONTENT_TYPE"] = headers["content-type"]
+        print headers["content-type"]
     else:
         environ["REQUEST_METHOD"] = "GET"
-        environ["CONTENT_LENGTH"] = 0
+        environ["CONTENT_LENGTH"] = "0"
         environ["CONTENT_TYPE"] = "text/html"
    
     # this function is nested inside handle_connection because I don't know
@@ -70,18 +71,36 @@ def handle_connection(conn):
     # make content into a mysterious "StringIO" object
     content = StringIO(content)
     environ["wsgi.input"] = content
+    environ["wsgi.version"] = (1, 0)
+    environ["wsgi.errors"] = stderr
+    environ["wsgi.multithread"] = False
+    environ["wsgi.multiprocess"] = False
+    environ["wsgi.run_once"] = False
+    environ["wsgi.url_scheme"] = "http"
+    if "cookie" in headers.keys():
+        environ["HTTP_COOKIE"] = headers["cookie"]
+    else:
+        environ["HTTP_COOKIE"] = ""
+
+    # this uses my wsgi app from app.py
     the_app = make_app()
+
+    # wsgi validation
+    the_app = validator(the_app)
+
     ret = the_app(environ, start_response)
     if (ret):
         for stuff in ret:
             conn.send(stuff)
 
+    ret.close()
     conn.close()
 
 def main():
     s = socket.socket()         # Create a socket object
     host = socket.getfqdn() # Get local machine name
-    port = random.randint(8000, 9999)
+    #port = random.randint(8000, 9999)
+    port = 9876
     s.bind((host, port))        # Bind to the port
 
     print 'Starting server on', host, port
@@ -94,7 +113,7 @@ def main():
         # Establish connection with client.    
         c, (client_host, client_port) = s.accept()
         print 'Got connection from', client_host, client_port
-        handle_connection(c)
+        handle_connection(c, client_port)
 
 if __name__ == '__main__':
     main()
