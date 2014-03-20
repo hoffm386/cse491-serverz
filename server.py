@@ -2,11 +2,26 @@
 import random
 import socket
 import time
-from urlparse import urlparse, parse_qs
+from urlparse import urlparse
 from StringIO import StringIO
 from app import make_app
 from wsgiref.validate import validator
 from sys import stderr
+
+# app.py
+from app import make_app
+
+#Quixote
+#import quixote
+#from quixote.demo.altdemo import create_publisher
+#p = create_publisher()
+
+#Image app
+#import quixote
+#import imageapp
+#imageapp.setup()
+#p = imageapp.create_publisher()
+
 
 def handle_connection(conn, port):
 
@@ -85,6 +100,12 @@ def handle_connection(conn, port):
     # this uses my wsgi app from app.py
     the_app = make_app()
 
+    # for Quixote alt demo
+    #wsgi_app = quixote.get_wsgi_app()
+
+    # for Quixote imageapp
+    #wsgi_app = quixote.get_wsgi_app()
+
     # wsgi validation
     the_app = validator(the_app)
 
@@ -100,7 +121,7 @@ def main():
     s = socket.socket()         # Create a socket object
     host = socket.getfqdn() # Get local machine name
     #port = random.randint(8000, 9999)
-    port = 9876
+    port = 8501
     s.bind((host, port))        # Bind to the port
 
     print 'Starting server on', host, port
