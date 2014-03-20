@@ -66,7 +66,7 @@ def test_handle_content_get():
 def test_handle_file_get():
     conn = FakeConnection("GET /file HTTP/1.0\r\n\r\n")
     header = 'HTTP/1.0 200 OK\r\n' + \
-             'Content-type: text/html\r\n' + \
+             'Content-type: text/plain\r\n' + \
              '\r\n'
     expected_return = header
     server.handle_connection(conn, 8500)
