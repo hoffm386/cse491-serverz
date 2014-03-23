@@ -14,8 +14,9 @@ def create_publisher():
 def setup():                            # stuff that should be run once.
     html.init_templates()
 
-    some_data = open('imageapp/dice.png', 'rb').read()
-    image.add_image(some_data)
+    filename = "imageapp/dice.png"
+    some_data = open(filename, 'rb').read()
+    image.add_image(some_data, filename)
     
 
 def teardown():                         # stuff that should be run once.
