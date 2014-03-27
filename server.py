@@ -148,15 +148,14 @@ def handle_connection(conn, port, app=make_app()):
         environ["HTTP_COOKIE"] = ""
 
     # wsgi validation
-    #the_app = validator(app)
-    the_app = app
+    the_app = validator(app)
 
     ret = the_app(environ, start_response)
     if (ret):
         for stuff in ret:
             conn.send(stuff)
 
-    #ret.close()
+    ret.close()
     conn.close()
 
 def main():
