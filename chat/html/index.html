@@ -37,9 +37,11 @@ $(document).ready(function() {
 
         author = $("author", message).text();
         content = $("text", message).text();
-
-        $("#messagewindow").prepend("<b>" + author + "</b>:" + content 
-                                    + "<br>");
+        // I think timestamp is in seconds?
+        date_obj = new Date(timestamp/100);
+        time_str = date_obj.toTimeString();
+        $("#messagewindow").prepend("[" + time_str + "] " + "<b>" + 
+                                        author + "</b>:" + content + "<br>");
      });
   };
 

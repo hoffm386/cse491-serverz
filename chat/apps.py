@@ -5,6 +5,7 @@ import traceback
 import random
 import time
 import cgi
+import time
 
 class Message(object):
    def __init__(self, timestamp, user, message):
@@ -13,36 +14,37 @@ class Message(object):
       self.message = message
 
 class ChatApp(object):
-   def __init__(self, files_path):
+    def __init__(self, files_path):
       self.file_server = FileServer(files_path)
       self.messages = []
    
-   def get_messages_since(self, timestamp):
-      """Retrieve any messages received since the given timestamp."""
-      x = []
-      for m in self.messages:
-         if m.timestamp > timestamp:
-            x.append(m)
+    def get_messages_since(self, timestamp):
+        """Retrieve any messages received since the given timestamp."""
+        x = []
+        for m in self.messages:
+            if m.timestamp > timestamp:
+                x.append(m)
 
-      return x
+        return x
 
-   def format_response(self, new_messages, timestamp):
-      x = []
-      for m in new_messages:
-         x.append("""\
+    def format_response(self, new_messages, timestamp):
+        x = []
+        for m in new_messages:
+            print(m.timestamp)
+            x.append("""\
 <message>
  <author>%s</author>
  <text>%s</text>
 </message>
 """ % (m.user, m.message))
 
-      if x:                             # new messages received?
-         # yes
-         status = 1
-      else:
-         status = 2                     # no new messages
+        if x:                             # new messages received?
+            # yes
+            status = 1
+        else:
+            status = 2                     # no new messages
 
-      xml = """
+        xml = """
 <?xml version="1.0"?>
 <response>
  <status>%d</status>
@@ -51,48 +53,48 @@ class ChatApp(object):
 </response>
 """ % (status, timestamp, "".join(x))
 
-      return xml
+        return xml
 
-   def __call__(self, environ, start_response):
-      url = environ['PATH_INFO']
-      if url == '/get_messages':
-         # last_time
-         form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
-         last_time = float(form['last_time'].value)
+    def __call__(self, environ, start_response):
+        url = environ['PATH_INFO']
+        if url == '/get_messages':
+            # last_time
+            form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
+            last_time = float(form['last_time'].value)
 
-         new_messages = self.get_messages_since(last_time)
-         xml = self.format_response(new_messages, time.time())
+            new_messages = self.get_messages_since(last_time)
+            xml = self.format_response(new_messages, time.time())
 
-         # done; return whatever we've got.
-         start_response("200 OK", [('Content-type', 'text/html')])
+            # done; return whatever we've got.
+            start_response("200 OK", [('Content-type', 'text/html')])
          
-         print xml
-         return [xml]
-      elif url == '/post_message':
-         form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
+            print xml
+            return [xml]
+        elif url == '/post_message':
+            form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
 
-         # retrieve submitted data
-         last_time = float(form['last_time'].value)
-         author = form['user'].value
-         message = form['message'].value
+            # retrieve submitted data
+            last_time = float(form['last_time'].value)
+            author = form['user'].value
+            message = form['message'].value
 
-         # create and add new message:
-         timestamp = time.time()
-         m = Message(timestamp, author, message)
-         self.messages.append(m)
+            # create and add new message:
+            timestamp = time.time()
+            m = Message(timestamp, author, message)
+            self.messages.append(m)
 
-         # return any new messages:
-         new_messages = self.get_messages_since(last_time)
-         xml = self.format_response(new_messages, timestamp)
+            # return any new messages:
+            new_messages = self.get_messages_since(last_time)
+            xml = self.format_response(new_messages, timestamp)
 
-         # done; return whatever we've got.
-         start_response("200 OK", [('Content-type', 'text/html')])
+            # done; return whatever we've got.
+            start_response("200 OK", [('Content-type', 'text/html')])
          
-         print xml
-         return [xml]
+            print xml
+            return [xml]
 
-      # by default, just return a file
-      return self.file_server(environ, start_response)
+        # by default, just return a file
+        return self.file_server(environ, start_response)
 
 class FileServer(object):
    def __init__(self,path):
