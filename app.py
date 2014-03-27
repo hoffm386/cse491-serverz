@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from random import choice
-from urlparse import urlparse, parse_qs
+from urlparse import parse_qs
 from cgi import FieldStorage
 from StringIO import StringIO
 from jinja2 import FileSystemLoader, Environment
@@ -42,6 +42,7 @@ def simple_app(environ, start_response):
                 header_key_string = lowercase_key_string.replace("_","-")
                 headers[header_key_string] = value
 
+        # These values don't start with HTTP, but we always need them
         headers['content-type'] = environ['CONTENT_TYPE']
         headers['content-length'] = environ['CONTENT_LENGTH']
         
@@ -111,7 +112,7 @@ def handle_file_get(environment, args):
     # application/pdf instead of text/html
     text_file = open_file("files/city_all.txt")
     response_headers = []
-    response_headers.append(('Content-type', 'text/html'))
+    response_headers.append(('Content-type', 'text/plain'))
     return status, text_file, response_headers
 
 def handle_image_get(environment, args):

@@ -2,13 +2,54 @@
 import random
 import socket
 import time
-from urlparse import urlparse, parse_qs
+from urlparse import urlparse
 from StringIO import StringIO
-from app import make_app
 from wsgiref.validate import validator
 from sys import stderr
+from argparse import ArgumentParser
 
-def handle_connection(conn, port):
+# app.py
+from app import make_app
+
+# Quixote
+import quixote
+from quixote.demo.altdemo import create_publisher
+
+# image app
+import imageapp
+
+# list of available apps
+WSGI_APPS = ["image", "altdemo", "myapp", "default"]
+
+def make_imageapp():
+    imageapp.setup()
+    imageapp.create_publisher()
+    return quixote.get_wsgi_app()
+
+def make_altdemo():
+    create_publisher()
+    return quixote.get_wsgi_app()
+
+def select_app(input_str):
+    if input_str == "image":
+        return make_imageapp()
+    elif input_str == "altdemo":
+        return make_altdemo()
+    elif input_str == "myapp":
+        return make_app() # this function imported from my app.py
+    else:
+        # assume my app by default
+        return make_app() 
+
+def parse_commandline_args():
+    parser = ArgumentParser(description="Run WSGI app")
+    parser.add_argument("-A", default = "default", choices = WSGI_APPS, \
+                        help="Which WSGI app to run")
+    parser.add_argument("-p", default=0, type=int, \
+                        help="Which port number to run the WSGI app on")
+    return parser.parse_args()
+
+def handle_connection(conn, port, app=make_app()):
 
     #
     # Get header stuff from conn, parse header stuff so we know how much content
@@ -18,7 +59,11 @@ def handle_connection(conn, port):
     # loop until we get all of the header stuff
     full_request = conn.recv(1)
     while full_request[-4:] != "\r\n\r\n":
-        full_request += conn.recv(1)
+        next_data = conn.recv(1)
+        if next_data == "":
+            return
+        else:
+            full_request += next_data
 
     # split header into first line and everything else
     first_line, request_args = full_request.split("\r\n",1)
@@ -82,11 +127,8 @@ def handle_connection(conn, port):
     else:
         environ["HTTP_COOKIE"] = ""
 
-    # this uses my wsgi app from app.py
-    the_app = make_app()
-
     # wsgi validation
-    the_app = validator(the_app)
+    the_app = validator(app)
 
     ret = the_app(environ, start_response)
     if (ret):
@@ -97,10 +139,19 @@ def handle_connection(conn, port):
     conn.close()
 
 def main():
+    app_choice = parse_commandline_args()
+    # the user types "-A appname", hence app_choice.A
+    chosen_app = select_app(app_choice.A)
+    
     s = socket.socket()         # Create a socket object
     host = socket.getfqdn() # Get local machine name
-    #port = random.randint(8000, 9999)
-    port = 9876
+    
+    # the user types "-p portnumber", hence app_choice.p
+    if app_choice.p == 0:
+        #port = random.randint(8000, 9999)
+        port = 8501
+    else:
+        port = app_choice.p
     s.bind((host, port))        # Bind to the port
 
     print 'Starting server on', host, port
@@ -113,7 +164,7 @@ def main():
         # Establish connection with client.    
         c, (client_host, client_port) = s.accept()
         print 'Got connection from', client_host, client_port
-        handle_connection(c, client_port)
+        handle_connection(c, port, chosen_app)
 
 if __name__ == '__main__':
     main()

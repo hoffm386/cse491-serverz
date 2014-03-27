@@ -1,0 +1,30 @@
+go /
+code 200
+
+follow content
+code 200
+
+go /file
+code 200
+
+go /
+code 200
+
+follow image
+code 200
+
+go /form
+code 200
+fv 2 firstname John # fills out and second form
+fv 2 lastname Smith
+submit 3 # the textboxes are considered submit elements, so textbox,
+         # textbox, button means click the third one
+
+url "submit" #check to make sure it took us to submit page
+find "Mr. John Smith"
+
+go /asdfghjkl # go to invalid url
+code 404
+find "asdfghjkl" # make sure it tells the user which url they
+                 # tried to go to
+
