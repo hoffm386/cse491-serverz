@@ -11,32 +11,52 @@ from argparse import ArgumentParser
 # app.py
 from app import make_app
 
-# Quixote
+# Quixote altdemo
 import quixote
 from quixote.demo.altdemo import create_publisher
 
 # image app
 import imageapp
 
+# quotes app
+from quotes.apps import QuotesApp
+
 # list of available apps
-WSGI_APPS = ["image", "altdemo", "myapp", "default"]
+WSGI_APPS = [          \
+        "myapp",       \
+        "altdemo",     \
+        "image",       \
+        "quotes",      \
+        "default"      \
+        ]
+
+#
+# "make" functions for various apps
+# NOTE: make_app for my app was imported from app.py
+#
+
+def make_altdemo():
+    create_publisher()
+    return quixote.get_wsgi_app()
 
 def make_imageapp():
     imageapp.setup()
     imageapp.create_publisher()
     return quixote.get_wsgi_app()
 
-def make_altdemo():
-    create_publisher()
-    return quixote.get_wsgi_app()
+def make_quotesapp():
+    # syntax from @ctb 's quote-server
+    return QuotesApp('quotes/quotes.txt', 'quotes/html')
 
 def select_app(input_str):
-    if input_str == "image":
-        return make_imageapp()
+    if input_str == "myapp":
+        return make_app()
     elif input_str == "altdemo":
         return make_altdemo()
-    elif input_str == "myapp":
-        return make_app() # this function imported from my app.py
+    elif input_str == "image":
+        return make_imageapp()
+    elif input_str == "quotes":
+        return make_quotesapp()
     else:
         # assume my app by default
         return make_app() 
@@ -128,14 +148,15 @@ def handle_connection(conn, port, app=make_app()):
         environ["HTTP_COOKIE"] = ""
 
     # wsgi validation
-    the_app = validator(app)
+    #the_app = validator(app)
+    the_app = app
 
     ret = the_app(environ, start_response)
     if (ret):
         for stuff in ret:
             conn.send(stuff)
 
-    ret.close()
+    #ret.close()
     conn.close()
 
 def main():
