@@ -1,7 +1,6 @@
-<html>
-    <body>
-        <h1>404</h1>
-        <p>The page at {{ path }} could not be found</p>
-        <p>To return to the home page, click <a href='/'>here</a></p>
-    </body>
-</html>
+{% extends "base.html" %}
+{% block content %}
+    <h1>404</h1>
+    <p>The page at {{ path }} could not be found</p>
+    <p>To return to the home page, click <a href='/'>here</a></p>
+{% endblock %}

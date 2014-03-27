@@ -1,6 +1,5 @@
-<html>
-    <body>
-        <h1>Form Submission</h1>
-        Hello Mr. {{ firstname }} {{ lastname }}.
-    </body>
-</html>
+{% extends "base.html" %}
+{% block content %}
+    <h1>Form Submission</h1>
+    Hello Mr. {{ firstname }} {{ lastname }}.
+{% endblock %}
