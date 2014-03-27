@@ -27,6 +27,13 @@
  * Updated through Homework 8
  * Twill tests for imageapp, altdemo, and my app
  * Project 4: Change imageapp to support JPEG and TIFF (5pts)
-   - NOTE: Google Chrome and Firefox don't seem to support the TIFF file type,
+   * NOTE: Google Chrome and Firefox don't seem to support the TIFF file type,
      so the uploaded files from this project are only viewable on Internet
 	 Explorer (at least on my Windows 7 machine)
+
+ 2014-03-26 Erin Hoffman
+
+ * Updated through Homework 9
+ * Chat and quotes apps
+ * Project 3: Swipe a template from oswd.org and put it in place on your
+   imageapp server (5 pts)
