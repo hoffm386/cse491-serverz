@@ -21,12 +21,16 @@ import imageapp
 # quotes app
 from quotes.apps import QuotesApp
 
+# chat app
+from chat.apps import ChatApp
+
 # list of available apps
 WSGI_APPS = [          \
         "myapp",       \
         "altdemo",     \
         "image",       \
         "quotes",      \
+        "chat",        \
         "default"      \
         ]
 
@@ -48,6 +52,10 @@ def make_quotesapp():
     # syntax from @ctb 's quote-server
     return QuotesApp('quotes/quotes.txt', 'quotes/html')
 
+def make_chatapp():
+    # syntax from @ctb 's chat-server
+    return ChatApp('chat/html')
+
 def select_app(input_str):
     if input_str == "myapp":
         return make_app()
@@ -57,6 +65,8 @@ def select_app(input_str):
         return make_imageapp()
     elif input_str == "quotes":
         return make_quotesapp()
+    elif input_str == "chat":
+        return make_chatapp()
     else:
         # assume my app by default
         return make_app() 
