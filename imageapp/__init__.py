@@ -15,10 +15,5 @@ def setup():                            # stuff that should be run once.
     html.init_templates()
     image.initialize()
 
-    filename = "imageapp/dice.png"
-    some_data = open(filename, 'rb').read()
-    image.add_image(some_data, filename)
-    
-
 def teardown():                         # stuff that should be run once.
     pass

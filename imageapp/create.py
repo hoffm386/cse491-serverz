@@ -4,7 +4,12 @@
 import sqlite3
 
 db = sqlite3.connect('images.sqlite')
-db.execute('CREATE TABLE image_store (i INTEGER PRIMARY KEY, image BLOB)');
+create_str = 'CREATE TABLE image_store (' + \
+             'i INTEGER PRIMARY KEY, ' + \
+             'filename TEXT, ' + \
+             'image BLOB' + \
+             ')'
+db.execute(create_str);
 db.commit()
 db.close()
 
