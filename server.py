@@ -11,32 +11,62 @@ from argparse import ArgumentParser
 # app.py
 from app import make_app
 
-# Quixote
+# Quixote altdemo
 import quixote
 from quixote.demo.altdemo import create_publisher
 
 # image app
 import imageapp
 
+# quotes app
+from quotes.apps import QuotesApp
+
+# chat app
+from chat.apps import ChatApp
+
 # list of available apps
-WSGI_APPS = ["image", "altdemo", "myapp", "default"]
+WSGI_APPS = [          \
+        "myapp",       \
+        "altdemo",     \
+        "image",       \
+        "quotes",      \
+        "chat",        \
+        "default"      \
+        ]
+
+#
+# "make" functions for various apps
+# NOTE: make_app for my app was imported from app.py
+#
+
+def make_altdemo():
+    create_publisher()
+    return quixote.get_wsgi_app()
 
 def make_imageapp():
     imageapp.setup()
     imageapp.create_publisher()
     return quixote.get_wsgi_app()
 
-def make_altdemo():
-    create_publisher()
-    return quixote.get_wsgi_app()
+def make_quotesapp():
+    # syntax from @ctb 's quote-server
+    return QuotesApp('quotes/quotes.txt', 'quotes/html')
+
+def make_chatapp():
+    # syntax from @ctb 's chat-server
+    return ChatApp('chat/html')
 
 def select_app(input_str):
-    if input_str == "image":
-        return make_imageapp()
+    if input_str == "myapp":
+        return make_app()
     elif input_str == "altdemo":
         return make_altdemo()
-    elif input_str == "myapp":
-        return make_app() # this function imported from my app.py
+    elif input_str == "image":
+        return make_imageapp()
+    elif input_str == "quotes":
+        return make_quotesapp()
+    elif input_str == "chat":
+        return make_chatapp()
     else:
         # assume my app by default
         return make_app() 
