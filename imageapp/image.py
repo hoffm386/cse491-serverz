@@ -1,9 +1,9 @@
 # image handling API
 import mimetypes
-import cPickle
+import sqlite3
 import os
 
-IMAGE_DB_FILE = 'images.db'
+IMAGE_DB_FILE = 'images.sqlite'
 
 images = {}
 names = {}
@@ -12,18 +12,27 @@ def initialize():
     load()
 
 def load():
-    global images
     if os.path.exists(IMAGE_DB_FILE):
-        fp = open(IMAGE_DB_FILE, 'rb')
-        images = cPickle.load(fp)
-        fp.close()
+        db = sqlite3.connect(IMAGE_DB_FILE)
+        db.text_factory = bytes
+        c = db.cursor()
 
-        print 'Loaded: %d images' % (len(images))
+        c.execute('SELECT i, image FROM image_store ORDER BY i DESC')
 
-def save():
-    fp = open(IMAGE_DB_FILE, 'wb')
-    cPickle.dump(images, fp)
-    fp.close()
+        results = c.fetchall()
+
+        for num, image in results:
+            images[num] = image
+
+def save(data, image_num):
+    # connect to existing database
+    db = sqlite3.connect(IMAGE_DB_FILE)
+    # configure to allow binary insertions
+    db.text_factory = bytes
+
+    db.execute('INSERT INTO image_store (i, image) VALUES (?,?)', \
+            (image_num, data,))
+    db.commit()
 
 def add_image(data, filename="dice.png"):
     if images:
@@ -34,8 +43,8 @@ def add_image(data, filename="dice.png"):
     images[image_num] = data
     names[image_num] = filename
 
-    save()
-    
+    save(data, image_num)
+
     return image_num
 
 def get_image(num):
