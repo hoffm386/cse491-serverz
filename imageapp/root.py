@@ -1,12 +1,13 @@
 import quixote
 from quixote.directory import Directory, export, subdir
-from quixote.util import StaticFile
-import os.path
+from quixote.util import StaticDirectory
+import os
 
 from . import html, image
 
 class RootDirectory(Directory):
-    _q_exports = []
+    _q_exports = ['static']
+    static = StaticDirectory(os.path.join(os.path.dirname(__file__),'static'))
 
     @export(name='')                    # this makes it public.
     def index(self):

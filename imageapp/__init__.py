@@ -13,11 +13,7 @@ def create_publisher():
  
 def setup():                            # stuff that should be run once.
     html.init_templates()
-
-    filename = "imageapp/dice.png"
-    some_data = open(filename, 'rb').read()
-    image.add_image(some_data, filename)
-    
+    image.initialize()
 
 def teardown():                         # stuff that should be run once.
     pass
