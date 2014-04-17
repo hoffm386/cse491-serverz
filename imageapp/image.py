@@ -40,7 +40,6 @@ def load():
     for i, filename, image in results:
         images[i] = image
         names[i] = filename
-    print names
 
 def save(data, filename, image_num):
     # connect to existing database
@@ -72,7 +71,6 @@ def add_image(data, filename="dice.png"):
     
     # save to database
     save(data, filename, image_num)
-    print images
     
     # update in local data structure
     images[image_num] = data
