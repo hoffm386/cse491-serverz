@@ -57,9 +57,38 @@ class RootDirectory(Directory):
     def image(self):
         return html.render('image.html')
 
+    @export(name='image_list')
+    def image_list(self):
+        image_num = image.get_image_num()
+        info = {'num_images': image_num}
+        return html.render('image_list.html', info)
+
     @export(name='image_raw')
     def image_raw(self):
         response = quixote.get_response()
-        img, content_type = image.get_latest_image()
+        request = quixote.get_request()
+
+        # if the user is requesting a particular image, serve it
+        if 'num' in request.form.keys():
+            try:
+                image_num = int(request.form['num'].encode('ascii'))
+            except:
+                print "parsing error.  showing latest image"
+                image_num = image.get_image_num()
+
+            image_count = image.get_image_num()
+
+            # instead of error message-ing for too high or low, just reset
+            # to min or max
+            if image_num < 0:
+                image_num = 0
+            if image_num > image_count:
+                image_num = image_count
+
+            img, content_type = image.get_image(image_num)
+        # otherwise, serve the latest image
+        else:
+            img, content_type = image.get_latest_image()
+        
         response.set_content_type(content_type)
         return img

@@ -87,3 +87,6 @@ def get_image(num):
 def get_latest_image():
     num = max(images.keys())
     return get_image(num)
+
+def get_image_num():
+    return max(images.keys())
