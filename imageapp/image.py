@@ -14,25 +14,34 @@ def initialize():
 def load():
     global images
     global names
-    #if os.path.exists(IMAGE_DB_FILE):
-    if True:
-        print 'DB exists'
 
+    # Create database file if nonexistent
+    if os.path.exists(IMAGE_DB_FILE) == False:
+        print 'DB doesn\'t exist...creating at', IMAGE_DB_FILE
         db = sqlite3.connect(IMAGE_DB_FILE)
-        db.text_factory = bytes
-        c = db.cursor()
+        create_str = 'CREATE TABLE image_store (' + \
+                     'i INTEGER PRIMARY KEY,' + \
+                     'filename TEXT,' + \
+                     'image BLOB' + \
+                     ')'
+        db.execute(create_str)
+        db.commit()
+        db.close()
 
-        c.execute('SELECT i, filename, image FROM image_store ORDER BY i DESC')
+    # open existing database
+    db = sqlite3.connect(IMAGE_DB_FILE)
+    db.text_factory = bytes
+    c = db.cursor()
 
-        print 'First result from selection:\n'
-        print c.fetchone()
-        results = c.fetchall()
-        print results
+    c.execute('SELECT i, filename, image FROM image_store')
 
-        for num, name, image in results:
-            images[num] = image
-            names[num] = name
+    results = c.fetchall()
+
+    for i, filename, image in results:
+        images[i] = image
+        names[i] = filename
     print names
+
 def save(data, filename, image_num):
     # connect to existing database
     db = sqlite3.connect(IMAGE_DB_FILE)
@@ -42,33 +51,33 @@ def save(data, filename, image_num):
     insert_str = 'INSERT INTO image_store (' + \
                  'i, '                       + \
                  'filename, '                + \
-                 'image, '                   + \
+                 'image '                    + \
                  ')'                         + \
                  'VALUES ('                  + \
                  '?, '                       + \
                  '?, '                       + \
                  '?'                         + \
                  ')'
-    db.execute(insert_str, ( \
-                image_num,   \
-                filename,    \
-                data,        \
-                )            \
-              )   
+    db.execute(insert_str,(image_num, filename, data,))   
     db.commit()
 
 def add_image(data, filename="dice.png"):
+    # determine key value based on existing keys
     if images:
         image_num = max(images.keys()) + 1
     else:
         image_num = 0
 
     print "New image num is %d" % image_num
+    
+    # save to database
+    save(data, filename, image_num)
     print images
+    
+    # update in local data structure
     images[image_num] = data
     names[image_num] = filename
 
-    save(data, filename, image_num)
 
     return image_num
 
@@ -76,6 +85,5 @@ def get_image(num):
     return images[num], mimetypes.guess_type(names[num])[0]
 
 def get_latest_image():
-    load()
     num = max(images.keys())
     return get_image(num)
